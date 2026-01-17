@@ -11,6 +11,8 @@ public class GuiRunnerContext : ApplicationContext
 
     private readonly Pulsar _pulsar = new();
 
+    private readonly IconAnimator _iconAnimator;
+
     private int _direction = 1;
 
     public GuiRunnerContext()
@@ -21,18 +23,19 @@ public class GuiRunnerContext : ApplicationContext
         var icon = new NotifyIcon()
         {
             ContextMenuStrip = _contextMenu,
-            Icon = Default.MainIcon,
             Visible = true
         };
+
+        _iconAnimator = new IconAnimator(icon);
 
         icon.Click += IconClickHandler;
 
         var startMenuItem = new ToolStripMenuItem("S&tart");
-        startMenuItem.Click += (_, _) => _pulsar.Start();
+        startMenuItem.Click += async (_, _) => await StartJigglerAsync();
         _contextMenu.Items.Add(startMenuItem);
 
         var interruptMenuItem = new ToolStripMenuItem("I&nterrupt");
-        interruptMenuItem.Click += async (_, _) => await _pulsar.StopAsync();
+        interruptMenuItem.Click += async (_, _) => await StopJigglerAsync();
         _contextMenu.Items.Add(interruptMenuItem);
 
         _contextMenu.Items.Add(new ToolStripSeparator());
@@ -51,12 +54,26 @@ public class GuiRunnerContext : ApplicationContext
 
         if (_pulsar.IsRunning)
         {
-            await _pulsar.StopAsync();
+            await StopJigglerAsync();
         }
         else
         {
-            _pulsar.Start();
+            await StartJigglerAsync();
         }
+    }
+
+    private async Task StartJigglerAsync()
+    {
+        _iconAnimator.Cancel();
+        await _iconAnimator.AnimateStartAsync();
+        _pulsar.Start();
+    }
+
+    private async Task StopJigglerAsync()
+    {
+        _iconAnimator.Cancel();
+        await _iconAnimator.AnimateStopAsync();
+        await _pulsar.StopAsync();
     }
 
     private void PulsarPulseHandler(object? sender, EventArgs e)
