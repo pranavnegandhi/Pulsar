@@ -1,7 +1,5 @@
 ﻿using Notadesigner.Pulsar.Windows.Properties;
 using System.Runtime.InteropServices;
-using Windows.Win32;
-using Windows.Win32.UI.Input.KeyboardAndMouse;
 
 namespace Notadesigner.Pulsar.Windows;
 
@@ -92,30 +90,26 @@ public class GuiRunnerContext : ApplicationContext
 
     private static void Jiggle(int deltaX, int deltaY)
     {
-        var input = new INPUT()
+        var input = new NativeMethods.INPUT
         {
-            type = INPUT_TYPE.INPUT_MOUSE,
-            Anonymous = new INPUT._Anonymous_e__Union()
+            type = NativeMethods.INPUT_MOUSE,
+            mi = new NativeMethods.MOUSEINPUT
             {
-                mi = new MOUSEINPUT()
-                {
-                    dx = deltaX,
-                    dy = deltaY,
-                    mouseData = 0,
-                    dwFlags = MOUSE_EVENT_FLAGS.MOUSEEVENTF_MOVE,
-                    time = 0,
-                    dwExtraInfo = 0
-                }
+                dx = deltaX,
+                dy = deltaY,
+                mouseData = 0,
+                dwFlags = NativeMethods.MOUSEEVENTF_MOVE,
+                time = 0,
+                dwExtraInfo = 0
             }
         };
 
-        var result = PInvoke.SendInput(new ReadOnlySpan<INPUT>(in input), Marshal.SizeOf<INPUT>());
+        var inputs = new[] { input };
+        var result = NativeMethods.SendInput(1, inputs, Marshal.SizeOf<NativeMethods.INPUT>());
 
-        if (result == 1)
+        if (result != 1)
         {
-            return;
+            var error = Marshal.GetLastWin32Error();
         }
-
-        var error = Marshal.GetLastWin32Error();
     }
 }
