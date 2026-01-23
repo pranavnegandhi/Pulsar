@@ -88,7 +88,8 @@ public class Pulsar : IAsyncDisposable
     {
         while (true)
         {
-            await Task.Delay(TimeSpan.FromSeconds(1), token);
+            var delaySeconds = Random.Shared.Next(3, 11); // 3-10 seconds
+            await Task.Delay(TimeSpan.FromSeconds(delaySeconds), token);
             OnPulse();
         }
     }

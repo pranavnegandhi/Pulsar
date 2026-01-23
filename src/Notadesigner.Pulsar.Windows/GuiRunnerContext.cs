@@ -1,5 +1,5 @@
-﻿using Notadesigner.Pulsar.Windows.Properties;
-using System.Runtime.InteropServices;
+﻿using Notadesigner.Pulsar.Windows.Movement;
+using Notadesigner.Pulsar.Windows.Properties;
 
 namespace Notadesigner.Pulsar.Windows;
 
@@ -11,7 +11,9 @@ public class GuiRunnerContext : ApplicationContext
 
     private readonly IconAnimator _iconAnimator;
 
-    private int _direction = 1;
+    private readonly IPathGenerator _pathGenerator = new PhantomPathGenerator();
+
+    private readonly MouseMover _mouseMover = new();
 
     public GuiRunnerContext()
     {
@@ -74,42 +76,22 @@ public class GuiRunnerContext : ApplicationContext
         await _pulsar.StopAsync();
     }
 
-    private void PulsarPulseHandler(object? sender, EventArgs e)
+    private async void PulsarPulseHandler(object? sender, EventArgs e)
     {
-        var deltaX = Random.Shared.Next(1, 5);
-        var deltaY = Random.Shared.Next(1, 5);
-        Jiggle(deltaX * _direction, deltaY * _direction);
-
-        _direction *= -1;
+        try
+        {
+            var screenBounds = Screen.PrimaryScreen?.Bounds ?? new Rectangle(0, 0, 1920, 1080);
+            var path = _pathGenerator.GeneratePath(screenBounds.Width, screenBounds.Height);
+            await _mouseMover.ExecutePathAsync(path);
+        }
+        catch (OperationCanceledException)
+        {
+            // Animation cancelled, that's fine
+        }
     }
 
     private async void GuiRunnerContextThreadExitHandler(object? sender, EventArgs e)
     {
         await _pulsar.DisposeAsync();
-    }
-
-    private static void Jiggle(int deltaX, int deltaY)
-    {
-        var input = new NativeMethods.INPUT
-        {
-            type = NativeMethods.INPUT_MOUSE,
-            mi = new NativeMethods.MOUSEINPUT
-            {
-                dx = deltaX,
-                dy = deltaY,
-                mouseData = 0,
-                dwFlags = NativeMethods.MOUSEEVENTF_MOVE,
-                time = 0,
-                dwExtraInfo = 0
-            }
-        };
-
-        var inputs = new[] { input };
-        var result = NativeMethods.SendInput(1, inputs, Marshal.SizeOf<NativeMethods.INPUT>());
-
-        if (result != 1)
-        {
-            var error = Marshal.GetLastWin32Error();
-        }
     }
 }
