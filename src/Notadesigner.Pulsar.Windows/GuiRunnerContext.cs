@@ -11,7 +11,7 @@ public class GuiRunnerContext : ApplicationContext
 
     private readonly IconAnimator _iconAnimator;
 
-    private readonly IPathGenerator _pathGenerator = new PhantomPathGenerator();
+    private readonly IPathGenerator _pathGenerator = new JigglePathGenerator();
 
     private readonly MouseMover _mouseMover = new();
 
@@ -37,6 +37,11 @@ public class GuiRunnerContext : ApplicationContext
         var interruptMenuItem = new ToolStripMenuItem("I&nterrupt");
         interruptMenuItem.Click += async (_, _) => await StopJigglerAsync();
         _contextMenu.Items.Add(interruptMenuItem);
+
+        _contextMenu.Items.Add(new ToolStripSeparator());
+
+        var movementMenu = new MovementMenu();
+        _contextMenu.Items.Add(movementMenu.MenuItem);
 
         _contextMenu.Items.Add(new ToolStripSeparator());
 
